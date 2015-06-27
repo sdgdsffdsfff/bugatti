@@ -60,18 +60,21 @@ object ProjectHelper extends PlayCache {
     qProject.filter(_.templateId === templateId).length.run
   }
 
-  def count(projectName: Option[String]): Int = db withSession { implicit session =>
-    qProject.filteredBy(projectName)(_.name like s"${projectName.get}%").query.length.run
+  def count(projectName: Option[String], templateId: Option[Int]): Int = db withSession { implicit session =>
+    qProject.filteredBy(projectName)(_.name like s"${projectName.get}%")
+      .filteredBy(templateId)(_.templateId === templateId).query.length.run
   }
 
-  def all(projectName: Option[String], page: Int, pageSize: Int): Seq[Project] = db withSession { implicit session =>
+  def all(projectName: Option[String], templateId: Option[Int], page: Int, pageSize: Int): Seq[Project] = db withSession { implicit session =>
     val offset = pageSize * page
-    val query = qProject.filteredBy(projectName)(_.name like s"%${projectName.get}%").query
-    query.drop(offset).take(pageSize).list
+    val query = qProject
+      .filteredBy(projectName)(_.name like s"%${projectName.get}%")
+      .filteredBy(templateId)(_.templateId === templateId).query
+    query.drop(offset).take(pageSize).sortBy(_.name).list
   }
 
   def all(): Seq[Project] = db withSession { implicit session =>
-    qProject.list
+    qProject.sortBy(_.name).list
   }
 
   def allExceptSelf(id: Int): Seq[Project] = db withSession { implicit session =>
